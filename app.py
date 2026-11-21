@@ -45,3 +45,34 @@ def black_scholes(type_option, S, K, T, r, sigma):
     else:
         prix = K_actualise * normale(-d2) - S * normale(-d1)
     return max(prix, 0)
+    
+# 3. Interface : 
+import streamlit as st
+import matplotlib.pyplot as plt
+
+st.set_page_config(page_title="Pricer européen", page_icon="📈", layout="wide")
+st.title("Pricer d’options européennes")
+st.caption("Projet de maths appliquées · Black-Scholes · Sans dividendes")
+
+with st.sidebar:
+    st.header("Paramètres")
+    type_option = st.selectbox("Type d’option", ["Call", "Put"])
+    S = st.number_input("Prix du sous-jacent S (€)", min_value=0.0, max_value=1000000.0, value=100.0)
+    K = st.number_input("Prix d’exercice K (€)", min_value=0.01, max_value=1000000.0, value=100.0)
+    T = st.number_input("Maturité restante T (années)", min_value=0.0, max_value=100.0, value=1.0, step=0.25)
+    taux_pct = st.number_input("Taux sans risque annuel (%)", min_value=-20.0, max_value=100.0, value=5.0)
+    volatilite_pct = st.number_input("Volatilité annuelle (%)", min_value=0.0, max_value=500.0, value=20.0)
+    st.caption("Saisir 5 pour 5 %. Six mois = 0,5 an. Taux à capitalisation continue.")
+
+# Conversion des pourcentages avant l'appel à la fonction financière
+r = taux_pct / 100
+sigma = volatilite_pct / 100
+
+try:
+    prix = black_scholes(type_option, S, K, T, r, sigma)
+except (ValueError, OverflowError):
+    st.error("Paramètres invalides ou trop extrêmes. Vérifiez les valeurs saisies.")
+    st.stop()
+
+st.metric("Prix théorique du " + type_option.lower(), f"{prix:.4f} €")
+st.caption("Prix par unité de sous-jacent, sans multiplicateur de contrat.")
