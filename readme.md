@@ -60,7 +60,7 @@ L'ensemble des paramètres se configure depuis le panneau latéral gauche de l'i
 
 ---
 
-## Architecture et logique d'implémentation
+## Architecture et logique d'implémentation (à modifier)
 
 Le code de `app.py` est structuré de manière séquentielle afin de séparer le moteur mathématique de la couche d'affichage :
 
@@ -71,26 +71,7 @@ Le code de `app.py` est structuré de manière séquentielle afin de séparer le
    * Application de la formule fermée de Black-Scholes-Merton après conversion des taux et volatilités en format décimal.
 3. **Interface et visualisation (`streamlit` & `matplotlib`)** : Gestion des saisies utilisateur dans la barre latérale, interception des erreurs de calcul via `try/except` et génération dynamique du graphique et du flux mémoire `io.StringIO` pour l'export CSV.
 
-### Structure du dépôt
+### Structure du dépôt (à modifier)
 * `app.py` : Code principal (calcul financier, interface Streamlit, graphique et export).
 * `requirements.txt` : Liste des bibliothèques requises (`streamlit`, `matplotlib`).
 * `README.md` : Documentation du projet.
-
----
-
-## Cadre théorique et validation numérique
-
-### Hypothèses du modèle européen
-* Exercice uniquement à maturité ($T$), sans versement de dividendes.
-* Mouvement brownien géométrique du sous-jacent avec volatilité ($\sigma$) et taux sans risque ($r$) constants.
-* Absence d'opportunité d'arbitrage (AOA) et absence de coûts de transaction.
-
-### Benchmarks de validation
-Les calculs ont été vérifiés sur le cas de référence standard ($S = 100$, $K = 100$, $T = 1$, $r = 5\,\%$, $\sigma = 20\,\%$) :
-
-* **Call européen** : `10.4506 €` (`10.4505835722`)
-* **Put européen** : `5.5735 €` (`5.5735260223`)
-* **Parité Call-Put ($C - P = S - K e^{-rT}$)** : Égalité vérifiée (`4.8771 €` des deux côtés)
-* **Cas limites** :
-  * À maturité ($T = 0$, $S = 120$, $K = 100$) : Call = `20.00 €`, Put = `0.00 €`.
-  * Volatilité nulle ($\sigma = 0$, paramètres de référence) : Call = `4.8771 €`, Put = `0.00 €`.
