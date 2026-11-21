@@ -76,3 +76,35 @@ except (ValueError, OverflowError):
 
 st.metric("Prix théorique du " + type_option.lower(), f"{prix:.4f} €")
 st.caption("Prix par unité de sous-jacent, sans multiplicateur de contrat.")
+
+# 4. Courbe : seul le prix du sous-jacent varie
+prix_sous_jacent = []
+prix_options = []
+borne_superieure = max(2 * S, 2 * K)
+for i in range(101):
+    S_scenario = borne_superieure * i / 100
+    prix_scenario = black_scholes(type_option, S_scenario, K, T, r, sigma)
+    prix_sous_jacent.append(S_scenario)
+    prix_options.append(prix_scenario)
+
+figure, axes = plt.subplots(figsize=(9, 4))
+axes.plot(prix_sous_jacent, prix_options, color="#2563eb", label="Prix théorique")
+axes.scatter([S], [prix], color="#f59e0b", label="Paramètres actuels", zorder=3)
+axes.axvline(K, color="gray", linestyle="--", label="Prix d’exercice K")
+axes.set_xlabel("Prix du sous-jacent (€)")
+axes.set_ylabel("Prix de l’option (€)")
+axes.set_title("Prix du " + type_option.lower() + " selon le sous-jacent")
+axes.grid(alpha=0.2)
+axes.legend()
+figure.tight_layout()
+st.pyplot(figure)
+plt.close(figure)
+st.caption("K, T, r et σ restent constants. La courbe représente le prix, pas le profit.")
+
+# 5. Export CSV : paramètres et prix, lisibles dans un tableur
+contenu = io.StringIO()
+tableau = csv.writer(contenu, delimiter=";")
+tableau.writerow(["Type", "S_EUR", "K_EUR", "T_annees", "Taux_pct", "Volatilite_pct", "Prix_EUR"])
+tableau.writerow([type_option, S, K, T, taux_pct, volatilite_pct, prix])
+st.download_button("Télécharger le résultat (CSV)", data=contenu.getvalue().encode("utf-8-sig"), file_name="resultat_option.csv", mime="text/csv")
+st.caption("À l’importation : séparateur point-virgule ; séparateur décimal point.")
