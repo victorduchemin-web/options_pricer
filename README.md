@@ -1,7 +1,7 @@
 # Pricer d'options — Européennes & Américaines
 
-Application interactive développée en Python (Streamlit) dans le cadre du M2 Gestion de portefeuille. 
-L'objectif de ce projet est de valoriser des options vanilles (Call et Put) en combinant les approches analytiques (options européennes) et numériques (options américaines), de visualiser la sensibilité du prix au cours du sous-jacent et d'exporter les résultats.
+Application interactive développée en Python (Streamlit) dans le cadre du cours de mathématiques financières du M2 gestion de portefeuille. 
+L'objectif de ce projet est de valoriser des options vanilles (Call et Put) en observant des options européennes et des options américaines, de visualiser la sensibilité du prix au cours du sous-jacent et d'exporter les résultats.
 
 ## Avancement du développement
 
@@ -54,7 +54,7 @@ L'ensemble des paramètres se configure depuis le panneau latéral gauche de l'i
 | **Volatilité ($\sigma$)** | Volatilité annuelle implicite ou historique | Pourcentage (`%`), $\ge 0$ | `20.0` pour $20\,\%$ |
 
 ### Fonctionnalités de l'interface
-* **Valorisation instantanée** : Affichage du prix théorique par unité de sous-jacent (sans multiplicateur de contrat), recalculé dynamiquement à chaque modification d'un paramètre.
+* **Valorisation instantanée** : Affichage du prix théorique par unité de sous-jacent, recalculé dynamiquement à chaque modification d'un paramètre.
 * **Graphique de sensibilité** : Tracé de l'évolution du prix de l'option sur 101 points pour $S \in [0, 2 \max(S, K)]$, à $K, T, r, \sigma$ constants, avec repérage du cours actuel et du strike $K$.
 * **Export CSV** : Téléchargement d'un fichier `resultat_option.csv` (séparateur `;`, encodage UTF-8 BOM) directement exploitable sous Excel.
 
@@ -71,7 +71,7 @@ Le code de `app.py` est structuré de manière séquentielle afin de séparer le
    * Application de la formule fermée de Black-Scholes-Merton après conversion des taux et volatilités en format décimal.
 3. **Interface et visualisation (`streamlit` & `matplotlib`)** : Gestion des saisies utilisateur dans la barre latérale, interception des erreurs de calcul via `try/except` et génération dynamique du graphique et du flux mémoire `io.StringIO` pour l'export CSV.
 
-### Structure du dépôt (à modifier)
+### Structure du dépôt (à modifier si changements d'architecture pour pricer us)
 * `app.py` : Code principal (calcul financier, interface Streamlit, graphique et export).
 * `requirements.txt` : Liste des bibliothèques requises (`streamlit`, `matplotlib`).
 * `README.md` : Documentation du projet.
