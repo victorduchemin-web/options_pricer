@@ -140,7 +140,7 @@ st.caption("Δ et Γ pour +1 € de sous-jacent · 𝒱 et ρ pour +1 point de p
 # 4. Courbe dynamique selon le sous-jacent S
 courbe_choisie = st.radio(
     "Grandeur à afficher sur le graphique selon S :",
-    ["Prix (€)", "Delta (Δ)", "Gamma (Γ)", "Vega (𝒱)", "Theta (Θ)"],
+    ["Prix (€)", "Delta (Δ)", "Gamma (Γ)", "Vega (𝒱)", "Theta (Θ)", "Rho (ρ)"],
     horizontal=True,
 )
 
@@ -155,7 +155,13 @@ for i in range(101):
         valeurs_courbe.append(black_scholes(type_option, S_scenario, K, T, r, sigma))
     else:
         g_scen = grecques_black_scholes(type_option, S_scenario, K, T, r, sigma)
-        cle = {"Delta (Δ)": "delta", "Gamma (Γ)": "gamma", "Vega (𝒱)": "vega", "Theta (Θ)": "theta"}[courbe_choisie]
+        cle = {
+            "Delta (Δ)": "delta",
+            "Gamma (Γ)": "gamma",
+            "Vega (𝒱)": "vega",
+            "Theta (Θ)": "theta",
+            "Rho (ρ)": "rho",
+        }[courbe_choisie]
         valeurs_courbe.append(g_scen[cle])
 
 valeur_actuelle_map = {
@@ -164,6 +170,7 @@ valeur_actuelle_map = {
     "Gamma (Γ)": grecques["gamma"],
     "Vega (𝒱)": grecques["vega"],
     "Theta (Θ)": grecques["theta"],
+    "Rho (ρ)": grecques["rho"],
 }
 
 figure, axes = plt.subplots(figsize=(9, 4))
