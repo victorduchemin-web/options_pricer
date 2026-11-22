@@ -59,7 +59,7 @@ L'ensemble des paramètres se configure depuis le panneau latéral gauche de cha
 - **Graphiques dynamiques** :
   - *Options Européennes* : Évolution du prix de l'option sur 101 points pour $S \in [0, 2 \max(S, K)]$, à $K, T, r, \sigma$ constants, avec repérage du cours actuel et du strike $K$.
   - *Options Américaines* : Courbe de convergence du prix binomial CRR en fonction du nombre de pas de temps $N$, comparée à la valeur de référence continue de Black-Scholes.
-- **Export CSV** : Téléchargement des résultats (`resultat_option.csv` ou `resultat_option_americaine.csv`, séparateur `;`, encodage UTF-8 BOM) directement exploitable sous Excel.
+- **Export CSV** : Téléchargement des résultats (`resultat_option.csv` ou `resultat_option_americaine.csv`, séparateur `;`) directement exploitable sous Excel.
 
 ---
 
