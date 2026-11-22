@@ -4,8 +4,6 @@ import io
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Options Américaines", page_icon="🇺🇸", layout="wide")
-
 
 # 1. Fonctions de la loi normale et référence Black-Scholes
 def normale(x):
