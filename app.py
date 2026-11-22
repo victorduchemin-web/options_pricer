@@ -1,22 +1,36 @@
 import streamlit as st
 
-st.set_page_config(page_title="Pricer d'options", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Pricer d'Options — Accueil", page_icon="📈", layout="wide")
 
-st.title("Pricer d’options vanilles")
-st.caption("Projet de mathématiques financières · M2 Gestion de portefeuille · Sans dividendes")
 
-st.markdown("""
-Cette application permet de valoriser des options vanilles (**Call** et **Put**) et d'analyser leur sensibilité au cours du sous-jacent selon deux approches :
-""")
+def page_accueil():
+    st.title("Pricer d'options — Européennes & Américaines")
+    st.caption("Application de valorisation et de gestion des risques · M2 Gestion de Portefeuille")
 
-col1, col2 = st.columns(2)
+    st.markdown(
+        """
+        Cette application permet de valoriser des options vanilles (**Call** et **Put**) sans dividendes,
+        d'analyser leurs sensibilités (**Grecques**) et de visualiser leur profil de risque.
+        """
+    )
 
-with col1:
-    st.subheader("Options Européennes")
-    st.write("Valorisation analytique exacte par la formule fermée de **Black-Scholes-Merton** (exercice uniquement à maturité $T$).")
-    st.page_link("pages/1_Options_Europeennes.py", label="Ouvrir le pricer européen", icon="🇪🇺")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("🇪🇺 Options Européennes")
+        st.write("Valorisation analytique exacte via le modèle de **Black-Scholes-Merton** et calcul fermé des 5 Grecques.")
+        st.page_link("pages/1_Options_Europeennes.py", label="Ouvrir le pricer européen", icon="➡️")
 
-with col2:
-    st.subheader("Options Américaines")
-    st.write("Valorisation numérique par **arbre binomial de Cox-Ross-Rubinstein (CRR)** (exercice anticipé autorisé et calcul de la prime d'exercice anticipé).")
-    st.page_link("pages/2_Options_Americaines.py", label="Ouvrir le pricer américain", icon="🇺🇸")
+    with col2:
+        st.subheader("🇺🇸 Options Américaines")
+        st.write("Valorisation numérique via l'arbre binomial de **Cox-Ross-Rubinstein (CRR)**, prime d'exercice anticipé et Grecques numériques.")
+        st.page_link("pages/2_Options_Americaines.py", label="Ouvrir le pricer américain", icon="➡️")
+
+
+navigation = st.navigation(
+    [
+        st.Page(page_accueil, title="Page d'accueil", icon="🏠", default=True),
+        st.Page("pages/1_Options_Europeennes.py", title="Options Européennes", icon="🇪🇺"),
+        st.Page("pages/2_Options_Americaines.py", title="Options Américaines", icon="🇺🇸"),
+    ]
+)
+navigation.run()
