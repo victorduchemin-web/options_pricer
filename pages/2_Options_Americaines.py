@@ -7,9 +7,13 @@ import matplotlib.pyplot as plt
 st.set_page_config(page_title="Options Américaines", page_icon="🇺🇸", layout="wide")
 
 
-# 1. Fonction de répartition normale et Black-Scholes
+# 1. Fonctions de la loi normale et référence Black-Scholes
 def normale(x):
     return (1 + math.erf(x / math.sqrt(2))) / 2
+
+
+def densite_normale(x):
+    return math.exp(-0.5 * x ** 2) / math.sqrt(2 * math.pi)
 
 
 def black_scholes_ref(type_option, S, K, T, r, sigma):
@@ -25,7 +29,35 @@ def black_scholes_ref(type_option, S, K, T, r, sigma):
     return max(K_act * normale(-d2) - S * normale(-d1), 0.0)
 
 
-# 2. Moteur binomial CRR
+def grecques_black_scholes_ref(type_option, S, K, T, r, sigma):
+    K_act = K * math.exp(-r * T)
+    if T == 0 or sigma == 0 or S == 0:
+        if type_option == "Call":
+            itm = S > K_act
+            return {"delta": 1.0 if itm else 0.0, "gamma": 0.0, "vega": 0.0, "theta": (-r * K_act / 365.0) if itm else 0.0, "rho": (T * K_act / 100.0) if itm else 0.0}
+        itm = S < K_act
+        return {"delta": -1.0 if itm else 0.0, "gamma": 0.0, "vega": 0.0, "theta": (r * K_act / 365.0) if itm else 0.0, "rho": (-T * K_act / 100.0) if itm else 0.0}
+
+    racine_T = math.sqrt(T)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * racine_T)
+    d2 = d1 - sigma * racine_T
+    phi_d1 = densite_normale(d1)
+    gamma = phi_d1 / (S * sigma * racine_T)
+    vega = (S * phi_d1 * racine_T) / 100.0
+
+    if type_option == "Call":
+        delta = normale(d1)
+        theta = (-(S * phi_d1 * sigma) / (2 * racine_T) - r * K_act * normale(d2)) / 365.0
+        rho = (K * T * math.exp(-r * T) * normale(d2)) / 100.0
+    else:
+        delta = normale(d1) - 1.0
+        theta = (-(S * phi_d1 * sigma) / (2 * racine_T) + r * K_act * normale(-d2)) / 365.0
+        rho = -(K * T * math.exp(-r * T) * normale(-d2)) / 100.0
+
+    return {"delta": delta, "gamma": gamma, "vega": vega, "theta": theta, "rho": rho}
+
+
+# 2. Moteur binomial de CRR
 def arbre_binomial_detaille(type_option, S, K, T, r, sigma, N):
     """Renvoie le prix US ainsi que les nœuds aux pas i=1 et i=2 pour Delta, Gamma et Theta."""
     for valeur in [S, K, T, r, sigma]:
@@ -93,43 +125,43 @@ def arbre_binomial_americain(type_option, S, K, T, r, sigma, N):
     return arbre_binomial_detaille(type_option, S, K, T, r, sigma, N)["prix"]
 
 
-def grecques_americaines_crr(type_option, S, K, T, r, sigma, N):
-    """Calcule Delta, Gamma, Theta via l'arbre CRR et Vega, Rho par différences finies."""
+def grecques_arbre_rapide(type_option, S, K, T, r, sigma, N):
+    """Calcule Delta, Gamma et Theta directement depuis les nœuds de l'arbre CRR (sans recalcul)."""
     res = arbre_binomial_detaille(type_option, S, K, T, r, sigma, N)
-
-    # Cas limites (T = 0, sigma = 0 ou S = 0)
     if res["limite"]:
         K_act = K * math.exp(-r * T)
         if type_option == "Call":
             itm = S > K_act
-            delta = 1.0 if itm else 0.0
-            rho = (T * K_act / 100.0) if itm else 0.0
-            theta = (-r * K_act / 365.0) if itm else 0.0
-        else:
-            itm = S < K
-            delta = -1.0 if itm else 0.0
-            rho = 0.0
-            theta = 0.0
-        return {"delta": delta, "gamma": 0.0, "vega": 0.0, "theta": theta, "rho": rho}
+            return {"delta": 1.0 if itm else 0.0, "gamma": 0.0, "theta": (-r * K_act / 365.0) if itm else 0.0}
+        itm = S < K
+        return {"delta": -1.0 if itm else 0.0, "gamma": 0.0, "theta": 0.0}
 
     V00 = res["prix"]
     V10, V11 = res["pas_1"]
     V20, V21, V22 = res["pas_2"]
     u, d, dt = res["u"], res["d"], res["dt"]
 
-    S_u = S * u
-    S_d = S * d
-    S_uu = S * (u ** 2)
-    S_dd = S * (d ** 2)
+    S_u, S_d = S * u, S * d
+    S_uu, S_dd = S * (u ** 2), S * (d ** 2)
 
-    # Extraction directe sur les premiers pas de l'arbre
     delta = (V11 - V10) / (S_u - S_d)
-
     delta_up = (V22 - V21) / (S_uu - S)
     delta_down = (V21 - V20) / (S - S_dd)
     gamma = (delta_up - delta_down) / (0.5 * (S_uu - S_dd))
-
     theta = ((V21 - V00) / (2.0 * dt)) / 365.0
+
+    return {"delta": delta, "gamma": gamma, "theta": theta}
+
+
+def grecques_americaines_crr(type_option, S, K, T, r, sigma, N):
+    """Calcule les 5 Grecques : Delta, Gamma, Theta via l'arbre et Vega, Rho par différences finies."""
+    base = grecques_arbre_rapide(type_option, S, K, T, r, sigma, N)
+    V00 = arbre_binomial_americain(type_option, S, K, T, r, sigma, N)
+
+    if T == 0 or sigma == 0 or S == 0:
+        K_act = K * math.exp(-r * T)
+        rho = ((T * K_act / 100.0) if S > K_act else 0.0) if type_option == "Call" else 0.0
+        return {**base, "vega": 0.0, "rho": rho}
 
     # Vega par différence finie centrée (pour +1 % de volatilité)
     h_sigma = 0.005
@@ -142,7 +174,7 @@ def grecques_americaines_crr(type_option, S, K, T, r, sigma, N):
         vega = ((v_plus - V00) / h_sigma) / 100.0
 
     # Rho par différence finie centrée (pour +1 % de taux sans risque)
-    h_r = 0.001  # 0.1 %
+    h_r = 0.001
     try:
         r_plus = arbre_binomial_americain(type_option, S, K, T, r + h_r, sigma, N)
         r_moins = arbre_binomial_americain(type_option, S, K, T, r - h_r, sigma, N)
@@ -150,13 +182,7 @@ def grecques_americaines_crr(type_option, S, K, T, r, sigma, N):
     except ValueError:
         rho = 0.0
 
-    return {
-        "delta": delta,
-        "gamma": gamma,
-        "vega": max(vega, 0.0),
-        "theta": theta,
-        "rho": rho,
-    }
+    return {**base, "vega": max(vega, 0.0), "rho": rho}
 
 
 # 3. Interface Streamlit
@@ -205,11 +231,70 @@ g4.metric("Theta (Θ / jour)", f"{grecques_us['theta']:.4f} €")
 g5.metric("Rho (ρ / +1 %)", f"{grecques_us['rho']:.4f} €")
 st.caption("Δ, Γ et Θ extraits des premiers nœuds de l'arbre CRR · 𝒱 et ρ par différences finies centrées.")
 
-# 4. Graphique de convergence selon N
+# 4. Graphique dynamique selon le sous-jacent S (comparaison US vs EU)
+st.subheader("Profil de sensibilité selon le sous-jacent (S)")
+courbe_choisie = st.radio(
+    "Grandeur à afficher selon S :",
+    ["Prix (€)", "Delta (Δ)", "Gamma (Γ)", "Vega (𝒱)", "Theta (Θ)", "Rho (ρ)"],
+    horizontal=True,
+)
+
+prix_sous_jacent = []
+valeurs_us = []
+valeurs_eu = []
+borne_superieure = max(2 * S, 2 * K)
+cle_map = {
+    "Delta (Δ)": "delta",
+    "Gamma (Γ)": "gamma",
+    "Vega (𝒱)": "vega",
+    "Theta (Θ)": "theta",
+    "Rho (ρ)": "rho",
+}
+
+for i in range(61):
+    S_scen = borne_superieure * i / 60
+    prix_sous_jacent.append(S_scen)
+    if courbe_choisie == "Prix (€)":
+        valeurs_us.append(arbre_binomial_americain(type_option, S_scen, K, T, r, sigma, N))
+        valeurs_eu.append(black_scholes_ref(type_option, S_scen, K, T, r, sigma))
+    elif courbe_choisie in ["Delta (Δ)", "Gamma (Γ)", "Theta (Θ)"]:
+        cle = cle_map[courbe_choisie]
+        valeurs_us.append(grecques_arbre_rapide(type_option, S_scen, K, T, r, sigma, N)[cle])
+        valeurs_eu.append(grecques_black_scholes_ref(type_option, S_scen, K, T, r, sigma)[cle])
+    else:
+        cle = cle_map[courbe_choisie]
+        valeurs_us.append(grecques_americaines_crr(type_option, S_scen, K, T, r, sigma, N)[cle])
+        valeurs_eu.append(grecques_black_scholes_ref(type_option, S_scen, K, T, r, sigma)[cle])
+
+valeur_actuelle_map = {
+    "Prix (€)": prix_us,
+    "Delta (Δ)": grecques_us["delta"],
+    "Gamma (Γ)": grecques_us["gamma"],
+    "Vega (𝒱)": grecques_us["vega"],
+    "Theta (Θ)": grecques_us["theta"],
+    "Rho (ρ)": grecques_us["rho"],
+}
+
+fig_s, ax_s = plt.subplots(figsize=(9, 4))
+ax_s.plot(prix_sous_jacent, valeurs_us, color="#2563eb", label=f"{courbe_choisie} — Américain (CRR)")
+ax_s.plot(prix_sous_jacent, valeurs_eu, color="#94a3b8", linestyle=":", label=f"{courbe_choisie} — Européen (BS)")
+ax_s.scatter([S], [valeur_actuelle_map[courbe_choisie]], color="#f59e0b", label="Paramètres actuels", zorder=4)
+ax_s.axvline(K, color="gray", linestyle="--", label="Prix d’exercice K")
+ax_s.set_xlabel("Prix du sous-jacent (€)")
+ax_s.set_ylabel(courbe_choisie)
+ax_s.set_title(f"{courbe_choisie} du {type_option.lower()} américain vs européen selon S")
+ax_s.grid(alpha=0.2)
+ax_s.legend()
+fig_s.tight_layout()
+st.pyplot(fig_s)
+plt.close(fig_s)
+
+# 5. Graphique de convergence selon N
+st.subheader("Convergence numérique selon le nombre de pas (N)")
 pas_testes = list(range(10, min(N + 100, 410), 10))
 prix_convergence = [arbre_binomial_americain(type_option, S, K, T, r, sigma, n) for n in pas_testes]
 
-figure, axes = plt.subplots(figsize=(9, 4))
+figure, axes = plt.subplots(figsize=(9, 3.5))
 axes.plot(pas_testes, prix_convergence, color="#2563eb", marker="o", markersize=3, label="Prix américain (CRR)")
 axes.axhline(prix_eu, color="gray", linestyle="--", label="Prix européen (Black-Scholes)")
 axes.scatter([N], [prix_us], color="#f59e0b", zorder=4, label=f"Paramètre actuel (N={N})")
@@ -222,7 +307,7 @@ figure.tight_layout()
 st.pyplot(figure)
 plt.close(figure)
 
-# 5. Export CSV
+# 6. Export CSV
 contenu = io.StringIO()
 tableau = csv.writer(contenu, delimiter=";")
 tableau.writerow([
