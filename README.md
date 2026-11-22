@@ -6,8 +6,8 @@ L'objectif de ce projet est de valoriser des options vanilles (Call et Put) en o
 ## Avancement du développement
 
 * [x] **Module Options Européennes (Black-Scholes-Merton)** : Valorisation analytique sans dividendes, traitement des cas limites ($T = 0$, $\sigma = 0$, $S = 0$), courbe de sensibilité et export CSV.
-* [ ] **Module Options Américaines (en cours)** : Implémentation d'un modèle numérique (arbre binomial de Cox-Ross-Rubinstein) sur la même interface pour intégrer la prime d'exercice anticipé.
-* [ ] **Sensibilités (Grecques)** : Calcul et affichage du $\Delta$, $\Gamma$, $\mathcal{V}$, $\Theta$ et $\rho$.
+* [x] **Module Options Américaines (CRR)** : Implémentation d'un modèle numérique (arbre binomial de Cox-Ross-Rubinstein) sur la même interface pour intégrer la prime d'exercice anticipé.
+* [ ] **Sensibilités (Grecques) (à faire)** : Calcul et affichage du $\Delta$, $\Gamma$, $\mathcal{V}$, $\Theta$ et $\rho$.
 
 ---
 
