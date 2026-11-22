@@ -1,9 +1,76 @@
+import math
 import csv
 import io
 import streamlit as st
 import matplotlib.pyplot as plt
-from pricers import black_scholes, arbre_binomial_americain
 
+
+# 1. Fonction de répartition normale et référence Black-Scholes
+def normale(x):
+    return (1 + math.erf(x / math.sqrt(2))) / 2
+
+
+def black_scholes_ref(type_option, S, K, T, r, sigma):
+    if T == 0:
+        return max(S - K, 0.0) if type_option == "Call" else max(K - S, 0.0)
+    K_act = K * math.exp(-r * T)
+    if sigma == 0 or S == 0:
+        return max(S - K_act, 0.0) if type_option == "Call" else max(K_act - S, 0.0)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * math.sqrt(T))
+    d2 = d1 - sigma * math.sqrt(T)
+    if type_option == "Call":
+        return max(S * normale(d1) - K_act * normale(d2), 0.0)
+    return max(K_act * normale(-d2) - S * normale(-d1), 0.0)
+
+
+# 2. Moteur binomial de Cox-Ross-Rubinstein (CRR) pour option américaine
+def arbre_binomial_americain(type_option, S, K, T, r, sigma, N):
+    for valeur in [S, K, T, r, sigma]:
+        if not math.isfinite(valeur):
+            raise ValueError("Les paramètres doivent être des nombres finis.")
+    if type_option not in ["Call", "Put"]:
+        raise ValueError("Choisissez Call ou Put.")
+    if S < 0 or K <= 0 or T < 0 or sigma < 0 or N < 1:
+        raise ValueError("Paramètres invalides.")
+
+    if T == 0:
+        return max(S - K, 0.0) if type_option == "Call" else max(K - S, 0.0)
+
+    if sigma == 0 or S == 0:
+        prix_final = S * math.exp(r * T)
+        val = max(prix_final - K, 0.0) if type_option == "Call" else max(K - prix_final, 0.0)
+        val_act = val * math.exp(-r * T)
+        exercice_immediat = max(S - K, 0.0) if type_option == "Call" else max(K - S, 0.0)
+        return max(val_act, exercice_immediat)
+
+    dt = T / N
+    u = math.exp(sigma * math.sqrt(dt))
+    d = 1.0 / u
+    facteur_act = math.exp(-r * dt)
+    p = (math.exp(r * dt) - d) / (u - d)
+
+    if not (0.0 <= p <= 1.0):
+        raise ValueError("Condition d'absence d'arbitrage violée dans l'arbre (augmentez N).")
+
+    valeurs = []
+    for j in range(N + 1):
+        S_T = S * (u ** j) * (d ** (N - j))
+        payoff = max(S_T - K, 0.0) if type_option == "Call" else max(K - S_T, 0.0)
+        valeurs.append(payoff)
+
+    for i in range(N - 1, -1, -1):
+        nouvelles_valeurs = []
+        for j in range(i + 1):
+            S_noeud = S * (u ** j) * (d ** (i - j))
+            continuation = facteur_act * (p * valeurs[j + 1] + (1.0 - p) * valeurs[j])
+            exercice = max(S_noeud - K, 0.0) if type_option == "Call" else max(K - S_noeud, 0.0)
+            nouvelles_valeurs.append(max(continuation, exercice))
+        valeurs = nouvelles_valeurs
+
+    return max(valeurs[0], 0.0)
+
+
+# 3. Interface Streamlit
 st.set_page_config(page_title="Options Américaines", page_icon="🇺🇸", layout="wide")
 st.title("Pricer d’options américaines")
 st.caption("Modèle binomial de Cox-Ross-Rubinstein (CRR) · Exercice anticipé autorisé · Sans dividendes")
@@ -24,7 +91,7 @@ sigma = volatilite_pct / 100
 
 try:
     prix_us = arbre_binomial_americain(type_option, S, K, T, r, sigma, N)
-    prix_eu = black_scholes(type_option, S, K, T, r, sigma)
+    prix_eu = black_scholes_ref(type_option, S, K, T, r, sigma)
     prime_anticipee = max(prix_us - prix_eu, 0.0)
 except (ValueError, OverflowError) as e:
     st.error(f"Erreur de calcul : {e}")
