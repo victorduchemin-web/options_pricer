@@ -4,8 +4,6 @@ import io
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Pricer européen", page_icon="🇪🇺", layout="wide")
-
 
 # 1. Fonctions de la loi normale centrée réduite
 def normale(x):
