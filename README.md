@@ -69,12 +69,12 @@ L'application repose sur l'architecture multi-pages native de Streamlit afin d'i
 
 1. **Point d'entrée (`app.py`)** : Page d'accueil présentant les deux approches de valorisation et offrant des liens directs (`st.page_link`) vers les deux modules.
 2. **Moteur Européen (`pages/1_Options_Europeennes.py`)** :
-   - Calcul de $\mathcal{N}(x)$ via la fonction d'erreur de Gauss `math.erf` de la bibliothèque standard Python, évitant d'alourdir le projet avec `scipy`.
+   - Calcul de $\mathcal{N}(x)$ via la fonction d'erreur de Gauss `math.erf` de la bibliothèque standard Python
    - Validation stricte des entrées (`ValueError`), traitement explicite des cas limites ($T = 0$, $\sigma = 0$, $S = 0$) et application de la formule fermée de Black-Scholes-Merton.
 3. **Moteur Américain (`pages/2_Options_Americaines.py`)** :
    - Construction de l'arbre binomial de Cox-Ross-Rubinstein ($u = e^{\sigma \sqrt{\Delta t}}$, $d = 1/u$, probabilité risque-neutre $p = \frac{e^{r \Delta t} - d}{u - d}$) avec vérification de la condition d'absence d'arbitrage ($0 \le p \le 1$).
    - Rétropropagation dans l'arbre comparant à chaque nœud la valeur de continuation actualisée et le payoff d'exercice immédiat.
-4. **Interface et visualisation (`streamlit` & `matplotlib`)** : Gestion des saisies utilisateur dans la barre latérale, interception des erreurs de calcul via `try/except`, génération dynamique des graphiques et création d'un flux mémoire `io.StringIO` pour l'export CSV.
+4. **Interface et visualisation des résultats (`streamlit` & `matplotlib`)** : Gestion des saisies utilisateur dans la barre latérale, interception des erreurs de calcul via `try/except`, génération dynamique des graphiques et création d'un flux mémoire `io.StringIO` pour l'export CSV.
 
 ### Structure du projet
 - `app.py` : Page d'accueil et navigation principale de l'application multi-pages.
